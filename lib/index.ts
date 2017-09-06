@@ -24,6 +24,12 @@ export abstract class Stream<I,O> implements IStreamInput<I>, IStreamOutput<O> {
   }
 }
 
+export class SourceStream<T> extends Stream<T,T> {
+  input(obj: T) {
+    this.output(obj);
+  }
+}
+
 
 export class Transform<I,O> extends Stream<I,O> {
   private func: (arg: I) => O;
@@ -75,8 +81,18 @@ export class StreamFilter<T> extends Stream<T,T> {
 }
 
 
+export function source<T>(): SourceStream<T> {
+  return new SourceStream<T>();
+}
+
+
 export function map<I,O>(func: (obj: I) => O): Transform<I,O> {
   return new Transform(func);
+}
+
+
+export function filter<T>(predicate: (obj: T) => boolean): StreamFilter<T> {
+  return new StreamFilter(predicate);
 }
 
 
