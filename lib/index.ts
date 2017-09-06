@@ -91,6 +91,11 @@ export function map<I,O>(func: (obj: I) => O): Transform<I,O> {
 }
 
 
+export function filter<T>(predicate: (obj: T) => boolean): StreamFilter<T> {
+  return new StreamFilter(predicate);
+}
+
+
 export function forEach<T>(func: (obj: T) => void): Transform<T,T> {
   return new Transform<T,T>(obj => {
     func(obj);
