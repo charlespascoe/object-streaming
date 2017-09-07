@@ -47,6 +47,72 @@ export class SourceStream<T> extends Stream<T,T> {
 }
 
 
+export interface IBatchOptions {
+  maxItems?: number;
+  idleTimeout?: number;
+  delayTimeout?: number;
+}
+
+
+export class StreamBatcher<T> extends Stream<T,T[]> {
+  private options: IBatchOptions;
+  private batch: T[] = [];
+  private idleTimer: number | null = null;
+  private delayTimer: number | null = null;
+
+  constructor(options: IBatchOptions) {
+    super();
+    this.options = options;
+
+    if (options.idleTimeout !== undefined && options.delayTimeout !== undefined) {
+      throw new Error('idleTimeout and delayTimeout are mutually exclusive options');
+    }
+
+    if (options.maxItems === undefined && options.idleTimeout === undefined && options.delayTimeout === undefined) {
+      options.idleTimeout = 0;
+    }
+  }
+
+  input(obj: T) {
+    if (this.idleTimer !== null) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
+
+    this.batch.push(obj);
+
+    if (this.options.maxItems !== undefined && this.batch.length >= this.options.maxItems) {
+      this.emitBatch();
+      return;
+    }
+
+    if (this.options.idleTimeout !== undefined) {
+      this.idleTimer = setTimeout(() => {
+        this.idleTimer = null;
+        this.emitBatch();
+      }, this.options.idleTimeout);
+    } else if (this.options.delayTimeout !== undefined && this.delayTimer === null) {
+      this.delayTimer = setTimeout(() => {
+        this.delayTimer = null;
+        this.emitBatch();
+      }, this.options.delayTimeout);
+    }
+  }
+
+  emitBatch() {
+    if (this.delayTimer !== null) {
+      clearTimeout(this.delayTimer);
+      this.delayTimer = null;
+    }
+
+    if (this.batch.length === 0) return;
+
+    this.output(this.batch);
+    this.batch = [];
+  }
+}
+
+
 export function source<T>(): SourceStream<T> {
   return new SourceStream<T>();
 }
@@ -106,4 +172,18 @@ export function merge<T>(...streams: IStreamOutput<T>[]): Stream<T,T> {
   }
 
   return strm;
+}
+
+
+export function batch<T>(options: IBatchOptions = {}): StreamBatcher<T> {
+  return new StreamBatcher<T>(options);
+}
+
+
+export function spread<T>(): Stream<T[],T> {
+  return new FunctionStream<T[],T>((obj, output) => {
+    for (let item of obj) {
+      output(item);
+    }
+  });
 }
