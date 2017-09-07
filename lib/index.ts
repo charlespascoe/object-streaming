@@ -2,6 +2,7 @@ export interface IStreamInput<I> {
   input(obj: I): void;
 }
 
+
 export interface IStreamOutput<O> {
   pipe<T extends IStreamInput<O>>(outputStream: T): T;
 }
@@ -24,59 +25,24 @@ export abstract class Stream<I,O> implements IStreamInput<I>, IStreamOutput<O> {
   }
 }
 
+
+export class FunctionStream<I,O> extends Stream<I,O> {
+  private func: (obj: I, output: (obj: O) => void) => void;
+
+  constructor(func: (obj: I, output: (obj: O) => void) => void) {
+    super();
+    this.func = func;
+    this.output = this.output.bind(this);
+  }
+
+  public input(obj: I): void {
+    this.func(obj, this.output);
+  }
+}
+
 export class SourceStream<T> extends Stream<T,T> {
   input(obj: T) {
     this.output(obj);
-  }
-}
-
-
-export class Transform<I,O> extends Stream<I,O> {
-  private func: (arg: I) => O;
-
-  constructor(func: (arg: I) => O) {
-    super();
-    this.func = func;
-  }
-
-  public input(obj: I) {
-    this.output(this.func(obj));
-  }
-}
-
-
-export class StreamBranch<T> extends Stream<T,T> {
-  private predicate: (obj: T) => boolean;
-  private altStream: IStreamInput<T>;
-
-  constructor(predicate: (obj: T) => boolean, altStream: IStreamInput<T>) {
-    super();
-    this.predicate = predicate;
-    this.altStream = altStream;
-  }
-
-  public input(obj: T) {
-    if (this.predicate(obj)) {
-      this.altStream.input(obj);
-    } else {
-      this.output(obj);
-    }
-  }
-}
-
-
-export class StreamFilter<T> extends Stream<T,T> {
-  private predicate: (obj: T) => boolean;
-
-  constructor(predicate: (obj: T) => boolean) {
-    super();
-    this.predicate = predicate;
-  }
-
-  input(obj: T) {
-    if (this.predicate(obj)) {
-      this.output(obj);
-    }
   }
 }
 
@@ -86,23 +52,58 @@ export function source<T>(): SourceStream<T> {
 }
 
 
-export function map<I,O>(func: (obj: I) => O): Transform<I,O> {
-  return new Transform(func);
-}
-
-
-export function filter<T>(predicate: (obj: T) => boolean): StreamFilter<T> {
-  return new StreamFilter(predicate);
-}
-
-
-export function forEach<T>(func: (obj: T) => void): Transform<T,T> {
-  return new Transform<T,T>(obj => {
-    func(obj);
-    return obj;
+export function map<I,O>(func: (obj: I) => O): Stream<I,O> {
+  return new FunctionStream<I,O>((obj, output) => {
+    output(func(obj));
   });
 }
 
-export function branch<T>(predicate: (obj: T) => boolean, altStream: IStreamInput<T>): StreamBranch<T> {
-  return new StreamBranch(predicate, altStream);
+
+export function filter<T>(predicate: (obj: T) => boolean): Stream<T,T> {
+  return new FunctionStream<T,T>((obj, output) => {
+    if (predicate(obj)) {
+      output(obj);
+    }
+  });
+}
+
+
+export function forEach<T>(func: (obj: T) => void): Stream<T,T> {
+  return new FunctionStream<T,T>((obj, output) => {
+    func(obj);
+    output(obj);
+  });
+}
+
+
+export function branch<T>(predicate: (obj: T) => boolean, altStream: IStreamInput<T>): Stream<T,T> {
+  return new FunctionStream<T,T>((obj, output) => {
+    if (predicate(obj)) {
+      altStream.input(obj);
+    } else {
+      output(obj);
+    }
+  });
+}
+
+
+export function split<T>(...streams: IStreamInput<T>[]): Stream<T,T> {
+  return new FunctionStream<T,T>((obj, output) => {
+    for (let stream of streams) {
+      stream.input(obj);
+    }
+
+    output(obj);
+  });
+}
+
+
+export function merge<T>(...streams: IStreamOutput<T>[]): Stream<T,T> {
+  let strm = source<T>();
+
+  for (let stream of streams) {
+    stream.pipe(strm);
+  }
+
+  return strm;
 }
