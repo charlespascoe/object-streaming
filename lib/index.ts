@@ -43,7 +43,7 @@ export class FunctionStream<I,O> extends Stream<I,O> {
   }
 }
 
-export class EntryStream<T> extends Stream<T,T> {
+export class PassthroughStream<T> extends Stream<T,T> {
   public input(obj: T) {
     this.output(obj);
   }
@@ -116,8 +116,8 @@ export class StreamBatcher<T> extends Stream<T,T[]> {
 }
 
 
-export function source<T>(): EntryStream<T> {
-  return new EntryStream<T>();
+export function source<T>(): PassthroughStream<T> {
+  return new PassthroughStream<T>();
 }
 
 
