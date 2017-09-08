@@ -134,6 +134,45 @@ export class StreamBatcher<T> extends Stream<T,T[]> {
 }
 
 
+export class SynchroniserStream<I,O> extends Stream<I,O> {
+  private strm: Stream<I,O>;
+
+  private buffer: I[] = [];
+
+  private pending: boolean = false;
+
+  constructor(strm: Stream<I,O>) {
+    super();
+
+    this.strm = strm;
+
+    this.strm.pipe(forEach((obj: O) => {
+      this.output(obj);
+
+      this.pending = false;
+
+      this.next();
+    }));
+  }
+
+  public input(obj: I) {
+    this.buffer.push(obj);
+
+    this.next();
+  }
+
+  next() {
+    if (this.pending || this.buffer.length === 0) return;
+
+    this.pending = true;
+
+    let obj = <I>this.buffer.shift();
+
+    this.strm.input(obj);
+  }
+}
+
+
 export function source<T>(): PassthroughStream<T> {
   return new PassthroughStream<T>();
 }
@@ -264,4 +303,10 @@ export function limitLength<T>(maxLength: number): Stream<T[],T[]> {
 
     output(array);
   });
+}
+
+
+// WARNING: Errors, branches, or filters can block synchroniser streams!
+export function sync<I,O>(strm: Stream<I,O>): SynchroniserStream<I,O> {
+  return new SynchroniserStream<I,O>(strm);
 }
