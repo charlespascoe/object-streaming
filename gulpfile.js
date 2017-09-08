@@ -16,7 +16,8 @@ const tsProject = ts.createProject({
   },
   target: 'ES5',
   strict: true,
-  noImplicitAny: true
+  noImplicitAny: true,
+  lib: ['ES6', 'DOM']
 }, ts.reporter.fullReporter(true));
 
 
