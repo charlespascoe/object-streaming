@@ -8,10 +8,8 @@ export interface IStreamOutput<O> {
 }
 
 
-export abstract class Stream<I,O> implements IStreamInput<I>, IStreamOutput<O> {
+export abstract class SourceStream<O> implements IStreamOutput<O> {
   private outputStreams: IStreamInput<O>[] = [];
-
-  public abstract input(obj: I): void;
 
   protected output(obj: O): void {
     for (let outputStream of this.outputStreams) {
@@ -23,6 +21,11 @@ export abstract class Stream<I,O> implements IStreamInput<I>, IStreamOutput<O> {
     this.outputStreams.push(outputStream);
     return outputStream;
   }
+}
+
+
+export abstract class Stream<I,O> extends SourceStream<O> implements IStreamInput<I> {
+  public abstract input(obj: I): void;
 }
 
 
@@ -40,8 +43,8 @@ export class FunctionStream<I,O> extends Stream<I,O> {
   }
 }
 
-export class SourceStream<T> extends Stream<T,T> {
-  input(obj: T) {
+export class EntryStream<T> extends Stream<T,T> {
+  public input(obj: T) {
     this.output(obj);
   }
 }
@@ -113,8 +116,8 @@ export class StreamBatcher<T> extends Stream<T,T[]> {
 }
 
 
-export function source<T>(): SourceStream<T> {
-  return new SourceStream<T>();
+export function source<T>(): EntryStream<T> {
+  return new EntryStream<T>();
 }
 
 
