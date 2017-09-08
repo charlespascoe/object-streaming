@@ -224,3 +224,17 @@ export function spread<T>(): Stream<T[],T> {
     }
   });
 }
+
+
+export function limitLength<T>(maxLength: number): Stream<T[],T[]> {
+  if (maxLength < 1) throw new Error('lengthLimit: maxLength must be greater than 0');
+
+  return new FunctionStream<T[],T[]>((array, output) => {
+    while (array.length > maxLength) {
+      output(array.slice(0, maxLength));
+      array = array.slice(maxLength);
+    }
+
+    output(array);
+  });
+}
