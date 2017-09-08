@@ -127,10 +127,25 @@ export function map<I,O>(func: (obj: I) => O): Stream<I,O> {
   });
 }
 
+export function mapAsync<I,O>(func: (obj: I) => Promise<O>): Stream<I,O> {
+  return new FunctionStream<I,O>(async (obj, output) => {
+    output(await func(obj));
+  });
+}
+
 
 export function filter<T>(predicate: (obj: T) => boolean): Stream<T,T> {
   return new FunctionStream<T,T>((obj, output) => {
     if (predicate(obj)) {
+      output(obj);
+    }
+  });
+}
+
+
+export function filterAsync<T>(predicate: (obj: T) => Promise<boolean>): Stream<T,T> {
+  return new FunctionStream<T,T>(async (obj, output) => {
+    if (await predicate(obj)) {
       output(obj);
     }
   });
@@ -145,9 +160,28 @@ export function forEach<T>(func: (obj: T) => void): Stream<T,T> {
 }
 
 
+export function forEachAsync<T>(func: (obj: T) => Promise<void>): Stream<T,T> {
+  return new FunctionStream<T,T>(async (obj, output) => {
+    await func(obj);
+    output(obj);
+  });
+}
+
+
 export function branch<T>(predicate: (obj: T) => boolean, altStream: IStreamInput<T>): Stream<T,T> {
   return new FunctionStream<T,T>((obj, output) => {
     if (predicate(obj)) {
+      altStream.input(obj);
+    } else {
+      output(obj);
+    }
+  });
+}
+
+
+export function branchAsync<T>(predicate: (obj: T) => Promise<boolean>, altStream: IStreamInput<T>): Stream<T,T> {
+  return new FunctionStream<T,T>(async (obj, output) => {
+    if (await predicate(obj)) {
       altStream.input(obj);
     } else {
       output(obj);
