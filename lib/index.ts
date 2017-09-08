@@ -43,9 +43,27 @@ export class FunctionStream<I,O> extends Stream<I,O> {
   }
 }
 
+
 export class PassthroughStream<T> extends Stream<T,T> {
   public input(obj: T) {
     this.output(obj);
+  }
+}
+
+
+export class CompositeStream<I,O> extends Stream<I,O> {
+  private entry: IStreamInput<I>;
+
+  constructor(entry: IStreamInput<I>, exit: IStreamOutput<O>) {
+    super();
+
+    this.entry = entry;
+
+    exit.pipe(forEach((obj: O) => this.output(obj)));
+  }
+
+  public input(obj: I): void {
+    this.entry.input(obj);
   }
 }
 
@@ -118,6 +136,15 @@ export class StreamBatcher<T> extends Stream<T,T[]> {
 
 export function source<T>(): PassthroughStream<T> {
   return new PassthroughStream<T>();
+}
+
+
+export function stream<I,O>(buildStrm: (src: IStreamOutput<I>) => IStreamOutput<O>): CompositeStream<I,O> {
+  let src = source<I>();
+
+  let exit = buildStrm(src);
+
+  return new CompositeStream(src, exit);
 }
 
 
