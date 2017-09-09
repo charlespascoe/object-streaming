@@ -6,6 +6,7 @@ The framework provides a number of useful built-in streams, and you can easily c
 
 - [Installation](#installation)
 - [Usage](#usage)
+- [Concepts](#concepts)
 - [Built-In Utility Streams](#built-in-utility-streams)
     - [forEach](#foreachcallback)
     - [map](#mapcallback)
@@ -87,8 +88,6 @@ Complex processing streams can be constructed by combining multiple simple strea
 - A `pipe` method
 
 A stream accepts an object when `input` is called, does some processing on it, and calls `output` with the results of the processing. A stream can output objects to zero or more streams. `strmA.pipe(strmB)` will cause all outputted objects of `strmA` to be inputted into `strmB`; `pipe` will then return `strmB` so that `strmB`'s output can be piped into something else. This allows for a clean method-chaining API.
-
-***A note on references***
 
 Since complex streams are made up of multiple stream objects, the entry and exit stream objects will be different. Therefore, in the following code, `strm` will be a reference to the *last* stream object, not the first:
 
