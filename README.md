@@ -25,7 +25,7 @@ The framework provides a number of useful built-in streams, and you can easily c
 
 These examples are written in TypeScript, but this module is also completely compatible with plain JavaScript - essentially just remove any type definitions.
 
-Here's a simple stream that processes numbers:
+Here's a stream that processes numbers:
 
 ```typescript
 let strm = source<number>();
