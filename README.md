@@ -137,7 +137,7 @@ For each item that passes through the stream, call the callback, and then pass t
 ```typescript
 strm
   .pipe(forEach((item: SomeClass) => {
-	item.foo = true;
+    item.foo = true;
     item.bar();
   });
 ```
@@ -167,11 +167,11 @@ Pass each item into the callback; if it returns true, pass it onto the alternate
 ```typescript
 strm
   .pipe(branch(
-	(item: SomeClass) => true,
-	forEach((item: SomeClass) => console.log(item.foo))
+    (item: SomeClass) => true,
+    forEach((item: SomeClass) => console.log(item.foo))
   ))
   .pipe(forEach((item: SomeClass) => {
-	// This will never run because the branch callback always returns true!
+    // This will never run because the branch callback always returns true!
   }));
 ```
 
@@ -183,9 +183,9 @@ Each input item is passed to all the given streams, and then passed to the next 
 
 strm
   .pipe(split(
-	forEach((num: number) => console.log('A', num))
-	forEach((num: number) => console.log('B', num))
-	forEach((num: number) => console.log('C', num))
+    forEach((num: number) => console.log('A', num))
+    forEach((num: number) => console.log('B', num))
+    forEach((num: number) => console.log('C', num))
   ))
   .pipe(forEach((num: number) => console.log(num)))
 
@@ -204,7 +204,7 @@ Each item outputted by the given streams is passed to the next stream:
 
 ```typescript
 let strmA = source<number>(),
-	strmB = source<number>();
+    strmB = source<number>();
 
 merge(strmA, strmB)
   .pipe(forEach((num: number) => console.log(num)))
@@ -221,8 +221,8 @@ strmB.input(456);
 
 ```typescript
 let strmA = source<number>(),
-	strmB = source<number>(),
-	strmC = source<number>();
+    strmB = source<number>(),
+    strmC = source<number>();
 
 strmA
   .pipe(map((num: number) => num * 2))
