@@ -76,6 +76,59 @@ for (let i = 0; i < 20; i++) {
 // 38
 ```
 
+# Concepts
+
+Complex processing streams can be constructed by combining multiple simple stream objects. Stream objects define:
+
+- An input type
+- An `input` method
+- An output type
+- An `output` method
+- A `pipe` method
+
+A stream accepts an object when `input` is called, does some processing on it, and calls `output` with the results of the processing. A stream can output objects to zero or more streams. `strmA.pipe(strmB)` will cause all outputted objects of `strmA` to be inputted into `strmB`; `pipe` will then return `strmB` so that `strmB`'s output can be piped into something else. This allows for a clean method-chaining API.
+
+***A note on references***
+
+Since complex streams are made up of multiple stream objects, the entry and exit stream objects will be different. Therefore, in the following code, `strm` will be a reference to the *last* stream object, not the first:
+
+```typescript
+let strm = source<number>()
+   .pipe(/* some other stream */)
+   .pipe(forEach((x: number) => console.log(x))); // <- 'strm' has a reference to the stream created by this forEach(), not source()
+```
+
+If you need both the entry and exit streams, define the entry stream first, then compose the composite stream:
+
+```typescript
+let entryStrm = source<number>();
+
+let exitStrm = entryStrm
+  .pipe(/* ... */)
+  .pipe(/* ... */)
+  .pipe(/* ... */)
+  .pipe(/* ... */);
+
+// Later in the code...
+
+exitStrm.pipe(forEach(x => console.log(x)));
+entryStrm.input('xyz');
+```
+
+More conveniently, you can use the `stream` utility function to return a single Stream object, which takes a function with a single argument of the entry (source) stream.
+
+```typescript
+let strm = stream<number,string>(src => src
+  .pipe(/* ... */)
+  .pipe(/* ... */)
+  .pipe(/* ... */)
+  .pipe(/* ... */)
+);
+
+strm.pipe(forEach(x => console.log(x)));
+strm.input('xyz');
+```
+
 # Built-In Utility Streams
 
 ## forEach(*callback*)
