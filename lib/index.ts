@@ -43,9 +43,27 @@ export class FunctionStream<I,O> extends Stream<I,O> {
   }
 }
 
-export class EntryStream<T> extends Stream<T,T> {
+
+export class PassthroughStream<T> extends Stream<T,T> {
   public input(obj: T) {
     this.output(obj);
+  }
+}
+
+
+export class CompositeStream<I,O> extends Stream<I,O> {
+  private entry: IStreamInput<I>;
+
+  constructor(entry: IStreamInput<I>, exit: IStreamOutput<O>) {
+    super();
+
+    this.entry = entry;
+
+    exit.pipe(forEach((obj: O) => this.output(obj)));
+  }
+
+  public input(obj: I): void {
+    this.entry.input(obj);
   }
 }
 
@@ -116,8 +134,56 @@ export class StreamBatcher<T> extends Stream<T,T[]> {
 }
 
 
-export function source<T>(): EntryStream<T> {
-  return new EntryStream<T>();
+export class SynchroniserStream<I,O> extends Stream<I,O> {
+  private strm: Stream<I,O>;
+
+  private buffer: I[] = [];
+
+  private pending: boolean = false;
+
+  constructor(strm: Stream<I,O>) {
+    super();
+
+    this.strm = strm;
+
+    this.strm.pipe(forEach((obj: O) => {
+      this.output(obj);
+
+      this.pending = false;
+
+      this.next();
+    }));
+  }
+
+  public input(obj: I) {
+    this.buffer.push(obj);
+
+    this.next();
+  }
+
+  next() {
+    if (this.pending || this.buffer.length === 0) return;
+
+    this.pending = true;
+
+    let obj = <I>this.buffer.shift();
+
+    this.strm.input(obj);
+  }
+}
+
+
+export function source<T>(): PassthroughStream<T> {
+  return new PassthroughStream<T>();
+}
+
+
+export function stream<I,O>(buildStrm: (src: IStreamOutput<I>) => IStreamOutput<O>): CompositeStream<I,O> {
+  let src = source<I>();
+
+  let exit = buildStrm(src);
+
+  return new CompositeStream(src, exit);
 }
 
 
@@ -223,4 +289,24 @@ export function spread<T>(): Stream<T[],T> {
       output(item);
     }
   });
+}
+
+
+export function limitLength<T>(maxLength: number): Stream<T[],T[]> {
+  if (maxLength < 1) throw new Error('lengthLimit: maxLength must be greater than 0');
+
+  return new FunctionStream<T[],T[]>((array, output) => {
+    while (array.length > maxLength) {
+      output(array.slice(0, maxLength));
+      array = array.slice(maxLength);
+    }
+
+    output(array);
+  });
+}
+
+
+// WARNING: Errors, branches, or filters can block synchroniser streams!
+export function sync<I,O>(strm: Stream<I,O>): SynchroniserStream<I,O> {
+  return new SynchroniserStream<I,O>(strm);
 }
