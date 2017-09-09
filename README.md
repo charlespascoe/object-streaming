@@ -115,7 +115,7 @@ strm
 
 ## split(*...streams*)
 
-Each input item is pass to all the given streams, and then passed to the next stream:
+Each input item is passed to all the given streams, and then passed to the next stream:
 
 ```typescript
 
