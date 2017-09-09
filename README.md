@@ -4,6 +4,20 @@ A type-safe framework for stream processing of objects in TypeScript, useful for
 
 The framework provides a number of useful built-in streams, and you can easily create your own.
 
+- [Installation](#installation)
+- [Usage](#usage)
+- [Concepts](#concepts)
+- [Built-In Utility Streams](#built-in-utility-streams)
+    - [forEach](#foreachcallback)
+    - [map](#mapcallback)
+    - [filter](#filtercallback)
+    - [branch](#branchcallback-altstream)
+    - [split](#splitstreams)
+    - [merge](#mergestreams)
+    - [batch](#batchoptions)
+    - [spread](#spread)
+- [Custom Streams](#custom-streams)
+
 # Installation
 
 `$ npm install --save object-streaming`
@@ -12,7 +26,7 @@ The framework provides a number of useful built-in streams, and you can easily c
 
 These examples are written in TypeScript, but this module is also completely compatible with plain JavaScript - essentially just remove any type definitions.
 
-Here's a simple stream that processes numbers:
+Here's a stream that processes numbers:
 
 ```typescript
 let strm = source<number>();
@@ -36,34 +50,82 @@ strm
 for (let i = 0; i < 20; i++) {
   strm.input(i);
 }
+
+// Output:
+// Batched array length: 3
+// 2
+// 4
+// 6
+// Batched array length: 3
+// 8
+// [10]
+// 12
+// Batched array length: 3
+// 16
+// 18
+// [20]
+// Batched array length: 3
+// 22
+// 24
+// 26
+// Batched array length: 3
+// [30]
+// 32
+// 34
+// Batched array length: 2
+// 36
+// 38
 ```
 
-Output:
+# Concepts
 
+Complex processing streams can be constructed by combining multiple simple stream objects. Stream objects define:
+
+- An input type
+- An `input` method
+- An output type
+- An `output` method
+- A `pipe` method
+
+A stream accepts an object when `input` is called, does some processing on it, and calls `output` with the results of the processing. A stream can output objects to zero or more streams. `strmA.pipe(strmB)` will cause all outputted objects of `strmA` to be inputted into `strmB`; `pipe` will then return `strmB` so that `strmB`'s output can be piped into something else. This allows for a clean method-chaining API.
+
+Since complex streams are made up of multiple stream objects, the entry and exit stream objects will be different. Therefore, in the following code, `strm` will be a reference to the *last* stream object, not the first:
+
+```typescript
+let strm = source<number>()
+   .pipe(/* some other stream */)
+   .pipe(forEach((x: number) => console.log(x))); // <- 'strm' has a reference to the stream created by this forEach(), not source()
 ```
-Batched array length: 3
-2
-4
-6
-Batched array length: 3
-8
-[10]
-12
-Batched array length: 3
-16
-18
-[20]
-Batched array length: 3
-22
-24
-26
-Batched array length: 3
-[30]
-32
-34
-Batched array length: 2
-36
-38
+
+If you need both the entry and exit streams, define the entry stream first, then compose the composite stream:
+
+```typescript
+let entryStrm = source<number>();
+
+let exitStrm = entryStrm
+  .pipe(/* ... */)
+  .pipe(/* ... */)
+  .pipe(/* ... */)
+  .pipe(/* ... */);
+
+// Later in the code...
+
+exitStrm.pipe(forEach(x => console.log(x)));
+entryStrm.input('xyz');
+```
+
+More conveniently, you can use the `stream` utility function to return a single Stream object, which takes a function with a single argument of the entry (source) stream.
+
+```typescript
+let strm = stream<number,string>(src => src
+  .pipe(/* ... */)
+  .pipe(/* ... */)
+  .pipe(/* ... */)
+  .pipe(/* ... */)
+);
+
+strm.pipe(forEach(x => console.log(x)));
+strm.input('xyz');
 ```
 
 # Built-In Utility Streams
@@ -216,4 +278,53 @@ let strm = source<number[]>();
 strm
   .pipe(spread())
   .pipe(forEach((num: number) => console.log(num)));
+```
+
+# Custom Streams
+
+There are two main classes for defining custom streams: `SourceStream<T>` and `Stream<I,O>`.
+
+`SourceStream` is used when a class only outputs objects. Call `this.output` to emit an object:
+
+```typescript
+import { SourceStream } from 'object-stream';
+
+class BasicClockStream extends SourceStream<number> {
+  constructor() {
+    super();
+
+    setInterval(() => this.output(Date.now()), 1000);
+  }
+}
+
+let clockStrm = new BasicClockStream();
+
+clockStrm.pipe(/* another stream that accepts 'number' */);
+```
+
+`Stream` is used when to build stream processing classes that take an input and emit an output. It must define a public `input` method which accepts a single argument of the specified input type:
+
+```typescript
+import { Stream } from 'object-stream';
+
+class IntParseStream extends Stream<string,number> {
+  public input(obj: string) {
+    if (/\d+/.test(obj)) {
+      this.output(parseInt(obj));
+    }
+  }
+}
+
+let ips = new IntParseStream();
+
+ips
+  .pipe(forEach((num: number) => console.log(num)));
+
+ips.input('123');
+ips.input('abc');
+ips.input('456');
+
+// Output:
+// 123
+// 456
 ```
