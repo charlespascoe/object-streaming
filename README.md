@@ -135,6 +135,10 @@ strm.input('xyz');
 For each item that passes through the stream, call the callback, and then pass the item on to the next stream:
 
 ```typescript
+import { forEach } from 'object-stream';
+
+\\ ...
+
 strm
   .pipe(forEach((item: SomeClass) => {
     item.foo = true;
@@ -147,6 +151,10 @@ strm
 Map each item that passes through the stream using the callback, and pass it onto the next stream:
 
 ```typescript
+import { map } from 'object-stream';
+
+\\ ...
+
 strm
   .pipe(map((num: number) => new String(num)))
 ```
@@ -156,6 +164,10 @@ strm
 Pass each item into the callback; if it returns true, pass it onto the next stream, otherwise drop the item:
 
 ```typescript
+import { filter } from 'object-stream';
+
+\\ ...
+
 strm
    .pipe(filter((item: SomeClass) => item.isFlagChecked()))
 ```
@@ -165,6 +177,10 @@ strm
 Pass each item into the callback; if it returns true, pass it onto the alternate stream, otherwise pass it onto the next stream:
 
 ```typescript
+import { branch } from 'object-stream';
+
+\\ ...
+
 strm
   .pipe(branch(
     (item: SomeClass) => true,
@@ -180,6 +196,9 @@ strm
 Each input item is passed to all the given streams, and then passed to the next stream:
 
 ```typescript
+import { split } from 'object-stream';
+
+\\ ...
 
 strm
   .pipe(split(
@@ -203,6 +222,10 @@ strm.input(123)
 Each item outputted by the given streams is passed to the next stream:
 
 ```typescript
+import { merge } from 'object-stream';
+
+\\ ...
+
 let strmA = source<number>(),
     strmB = source<number>();
 
@@ -244,6 +267,10 @@ strmA.input(789);
 Groups together multiple items into an array:
 
 ```typescript
+import { batch } from 'object-stream';
+
+\\ ...
+
 strm
   .pipe(batch({maxItems: 4, idleTimeout: 100}))
   .pipe(forEach((nums: number[]) => console.log(nums)))
@@ -273,6 +300,10 @@ When no options are provided, it defaults to `idleTimeout = 0`, which emits the 
 Takes an array an passes each item onto the next stream:
 
 ```typescript
+import { spread } from 'object-stream';
+
+\\ ...
+
 let strm = source<number[]>();
 
 strm
@@ -288,6 +319,8 @@ There are two main classes for defining custom streams: `SourceStream<T>` and `S
 
 ```typescript
 import { SourceStream } from 'object-stream';
+
+\\ ...
 
 class BasicClockStream extends SourceStream<number> {
   constructor() {
@@ -306,6 +339,8 @@ clockStrm.pipe(/* another stream that accepts 'number' */);
 
 ```typescript
 import { Stream } from 'object-stream';
+
+\\ ...
 
 class IntParseStream extends Stream<string,number> {
   public input(obj: string) {
