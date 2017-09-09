@@ -4,6 +4,19 @@ A type-safe framework for stream processing of objects in TypeScript, useful for
 
 The framework provides a number of useful built-in streams, and you can easily create your own.
 
+- [Installation](#installation)
+- [Usage](#usage)
+- [Built-In Utility Streams](#built-in-utility-streams)
+    - [forEach](#foreachcallback)
+    - [map](#mapcallback)
+    - [filter](#filtercallback)
+    - [branch](#branchcallback-altstream)
+    - [split](#splitstreams)
+    - [merge](#mergestreams)
+    - [batch](#batchoptions)
+    - [spread](#spread)
+- [Custom Streams](#custom-streams)
+
 # Installation
 
 `$ npm install --save object-streaming`
@@ -36,34 +49,31 @@ strm
 for (let i = 0; i < 20; i++) {
   strm.input(i);
 }
-```
 
-Output:
-
-```
-Batched array length: 3
-2
-4
-6
-Batched array length: 3
-8
-[10]
-12
-Batched array length: 3
-16
-18
-[20]
-Batched array length: 3
-22
-24
-26
-Batched array length: 3
-[30]
-32
-34
-Batched array length: 2
-36
-38
+// Output:
+// Batched array length: 3
+// 2
+// 4
+// 6
+// Batched array length: 3
+// 8
+// [10]
+// 12
+// Batched array length: 3
+// 16
+// 18
+// [20]
+// Batched array length: 3
+// 22
+// 24
+// 26
+// Batched array length: 3
+// [30]
+// 32
+// 34
+// Batched array length: 2
+// 36
+// 38
 ```
 
 # Built-In Utility Streams
@@ -216,4 +226,53 @@ let strm = source<number[]>();
 strm
   .pipe(spread())
   .pipe(forEach((num: number) => console.log(num)));
+```
+
+# Custom Streams
+
+There are two main classes for defining custom streams: `SourceStream<T>` and `Stream<I,O>`.
+
+`SourceStream` is used when a class only outputs objects. Call `this.output` to emit an object:
+
+```typescript
+import { SourceStream } from 'object-stream';
+
+class BasicClockStream extends SourceStream<number> {
+  constructor() {
+    super();
+
+    setInterval(() => this.output(Date.now()), 1000);
+  }
+}
+
+let clockStrm = new BasicClockStream();
+
+clockStrm.pipe(/* another stream that accepts 'number' */);
+```
+
+`Stream` is used when to build stream processing classes that take an input and emit an output. It must define a public `input` method which accepts a single argument of the specified input type:
+
+```typescript
+import { Stream } from 'object-stream';
+
+class IntParseStream extends Stream<string,number> {
+  public input(obj: string) {
+    if (/\d+/.test(obj)) {
+      this.output(parseInt(obj));
+    }
+  }
+}
+
+let ips = new IntParseStream();
+
+ips
+  .pipe(forEach((num: number) => console.log(num)));
+
+ips.input('123');
+ips.input('abc');
+ips.input('456');
+
+// Output:
+// 123
+// 456
 ```
