@@ -137,7 +137,7 @@ For each item that passes through the stream, call the callback, and then pass t
 ```typescript
 import { forEach } from 'object-stream';
 
-\\ ...
+// ...
 
 strm
   .pipe(forEach((item: SomeClass) => {
@@ -153,7 +153,7 @@ Map each item that passes through the stream using the callback, and pass it ont
 ```typescript
 import { map } from 'object-stream';
 
-\\ ...
+// ...
 
 strm
   .pipe(map((num: number) => new String(num)))
@@ -166,7 +166,7 @@ Pass each item into the callback; if it returns true, pass it onto the next stre
 ```typescript
 import { filter } from 'object-stream';
 
-\\ ...
+// ...
 
 strm
    .pipe(filter((item: SomeClass) => item.isFlagChecked()))
@@ -179,7 +179,7 @@ Pass each item into the callback; if it returns true, pass it onto the alternate
 ```typescript
 import { branch } from 'object-stream';
 
-\\ ...
+// ...
 
 strm
   .pipe(branch(
@@ -198,7 +198,7 @@ Each input item is passed to all the given streams, and then passed to the next 
 ```typescript
 import { split } from 'object-stream';
 
-\\ ...
+// ...
 
 strm
   .pipe(split(
@@ -224,7 +224,7 @@ Each item outputted by the given streams is passed to the next stream:
 ```typescript
 import { merge } from 'object-stream';
 
-\\ ...
+// ...
 
 let strmA = source<number>(),
     strmB = source<number>();
@@ -269,7 +269,7 @@ Groups together multiple items into an array:
 ```typescript
 import { batch } from 'object-stream';
 
-\\ ...
+// ...
 
 strm
   .pipe(batch({maxItems: 4, idleTimeout: 100}))
@@ -302,7 +302,7 @@ Takes an array an passes each item onto the next stream:
 ```typescript
 import { spread } from 'object-stream';
 
-\\ ...
+// ...
 
 let strm = source<number[]>();
 
@@ -320,7 +320,7 @@ There are two main classes for defining custom streams: `SourceStream<T>` and `S
 ```typescript
 import { SourceStream } from 'object-stream';
 
-\\ ...
+// ...
 
 class BasicClockStream extends SourceStream<number> {
   constructor() {
@@ -340,7 +340,7 @@ clockStrm.pipe(/* another stream that accepts 'number' */);
 ```typescript
 import { Stream } from 'object-stream';
 
-\\ ...
+// ...
 
 class IntParseStream extends Stream<string,number> {
   public input(obj: string) {
