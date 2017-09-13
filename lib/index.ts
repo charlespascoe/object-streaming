@@ -173,6 +173,36 @@ export class SynchroniserStream<I,O> extends Stream<I,O> {
 }
 
 
+export class IfStream<I,O> extends Stream<I,O> {
+  constructor(
+    private predicate: (obj: I) => Promise<boolean>,
+    private trueStream: Stream<I,O>,
+    private falseStream: Stream<I,O>
+  ) {
+    super();
+
+    let out = forEach<O>((obj: O) => this.output(obj));
+
+    this.trueStream.pipe(out);
+    this.falseStream.pipe(out);
+  }
+
+  public async input(obj: I): Promise<void> {
+    try {
+      let result = await this.predicate(obj);
+
+      if (result) {
+        this.trueStream.input(obj);
+      } else {
+        this.falseStream.input(obj);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+
+
 export function source<T>(): PassthroughStream<T> {
   return new PassthroughStream<T>();
 }
@@ -253,6 +283,26 @@ export function branchAsync<T>(predicate: (obj: T) => Promise<boolean>, altStrea
       output(obj);
     }
   });
+}
+
+
+export function ifThen<T>(predicate: (obj: T) => boolean, trueStream: Stream<T,T>): Stream<T,T> {
+  return new IfStream<T,T>(async (obj: T) => predicate(obj), trueStream, new PassthroughStream<T>());
+}
+
+
+export function ifThenAsync<T>(predicate: (obj: T) => Promise<boolean>, trueStream: Stream<T,T>): Stream<T,T> {
+  return new IfStream<T,T>(predicate, trueStream, new PassthroughStream<T>());
+}
+
+
+export function ifElse<I,O>(predicate: (obj: I) => boolean, trueStream: Stream<I,O>, falseStream: Stream<I,O>): Stream<I,O> {
+  return new IfStream<I,O>(async (obj: I) => predicate(obj), trueStream, falseStream);
+}
+
+
+export function ifElseAsync<I,O>(predicate: (obj: I) => Promise<boolean>, trueStream: Stream<I,O>, falseStream: Stream<I,O>): Stream<I,O> {
+  return new IfStream(predicate, trueStream, falseStream);
 }
 
 
