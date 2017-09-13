@@ -1,3 +1,7 @@
+[![npm](https://img.shields.io/npm/v/object-streaming.svg)](https://www.npmjs.com/package/object-streaming)
+[![npm](https://img.shields.io/npm/dt/object-streaming.svg)](https://www.npmjs.com/package/object-streaming)
+[![npm](https://img.shields.io/npm/l/object-streaming.svg)](https://www.npmjs.com/package/object-streaming)
+
 # Type-safe Object Streaming
 
 A type-safe framework for stream processing of objects in TypeScript, useful for efficiently processing streams of data such as reading from a database using a cursor.
